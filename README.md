@@ -62,7 +62,7 @@
 <br>
 
 <h1 align="center" >
-  An AI coding agent designed for large tasks and real world projects.<br/><br/>
+  Plandex Agent - Autonomous AI coding for large tasks and real world projects.<br/><br/>
 </h1>
 
 <!-- <h2 align="center">
@@ -78,15 +78,57 @@
 
 <br/>
 
-💻  Plandex is a terminal-based AI development tool that can **plan and execute** large coding tasks that span many steps and touch dozens of files. It can handle up to 2M tokens of context directly (~100k per file), and can index directories with 20M tokens or more using tree-sitter project maps. 
+💻 **Plandex Agent** is a terminal-based AI development tool that can **autonomously plan and execute** large coding tasks that span many steps and touch dozens of files. It can handle up to 2M tokens of context directly (~100k per file), and can index directories with 20M tokens or more using tree-sitter project maps. 
 
-🔬  **A cumulative diff review sandbox** keeps AI-generated changes separate from your project files until they are ready to go. Command execution is controlled so you can easily roll back and debug. Plandex helps you get the most out of AI without leaving behind a mess in your project.
+🤖 **New Agent Mode** provides autonomous execution capabilities similar to Cursor's agent mode, with JSON-formatted responses perfect for programmatic integration and automation. Run `plandex agent "your task"` for fully autonomous AI coding.
 
-🧠  **Combine the best models** from Anthropic, OpenAI, Google, and open source providers to build entire features and apps with a robust terminal-based workflow.
+🔬 **A cumulative diff review sandbox** keeps AI-generated changes separate from your project files until they are ready to go. Command execution is controlled so you can easily roll back and debug. Plandex helps you get the most out of AI without leaving behind a mess in your project.
 
-🚀  Plandex is capable of <strong>full autonomy</strong>—it can load relevant files, plan and implement changes, execute commands, and automatically debug—but it's also highly flexible and configurable, giving developers fine-grained control and a step-by-step review process when needed.
+🧠 **Combine the best models** from Anthropic, OpenAI, Google, and open source providers to build entire features and apps with a robust terminal-based workflow.
 
-💪  Plandex is designed to be resilient to <strong>large projects and files</strong>. If you've found that others tools struggle once your project gets past a certain size or the changes are too complex, give Plandex a shot.
+🚀 **Plandex Agent** is capable of <strong>full autonomy</strong>—it can load relevant files, plan and implement changes, execute commands, and automatically debug—but it's also highly flexible and configurable, giving developers fine-grained control and a step-by-step review process when needed.
+
+💪 **Plandex Agent** is designed to be resilient to <strong>large projects and files</strong>. If you've found that others tools struggle once your project gets past a certain size or the changes are too complex, give Plandex Agent a shot.
+
+## 🤖 Plandex Agent Mode - Autonomous AI Coding
+
+**NEW**: Plandex Agent provides fully autonomous AI coding capabilities with programmatic integration support.
+
+### Agent Mode Features
+
+- 🚀 **Autonomous Execution**: Automatically explores codebase and makes changes without user intervention
+- 📊 **JSON Output**: Structured responses for easy programmatic parsing and automation
+- 👁️ **Human-Readable Progress**: Optional real-time progress display with timestamps and colors
+- 🔧 **No Plan Dependency**: Can work independently of local plans for analysis tasks
+- ⚡ **Real-time Feedback**: Provides job completion, errors, and progress updates
+
+### Agent Command Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--output`, `-o` | Output file for JSON responses | stdout |
+| `--no-plan` | Work without local plan context | false |
+| `--auto-exec` | Automatically execute commands | true |
+| `--auto-apply` | Automatically apply changes | true |
+| `--human-readable` | Display human-readable progress | true |
+| `--verbose` | Enable verbose human-readable output | false |
+| `--json` | Output JSON instead of human-readable format | false |
+
+### Quick Start with Agent Mode
+
+```bash
+# Basic autonomous coding
+plandex agent "Fix the bug in the login function"
+
+# With human-readable progress
+plandex agent "Add a new API endpoint" --verbose
+
+# JSON output for automation
+plandex agent "Refactor the database layer" --json
+
+# Save results to file
+plandex agent "Implement user auth" --output results.json
+```
 
 ## Smart context management that works in big projects
 
@@ -189,21 +231,82 @@ For a new project, you might also want to initialize a git repo. Plandex doesn't
 git init
 ```
 
-Now start the Plandex REPL in your project:
+Now start Plandex in your project:
 
+**Option 1: Interactive REPL Mode**
 ```bash
 plandex
+# or for short:
+pdx
 ```
 
-or for short:
-
+**Option 2: Autonomous Agent Mode (NEW)**
 ```bash
-pdx
+plandex agent "your coding task here"
 ```
 
 ☁️ _If you're using Plandex Cloud, you'll be prompted at this point to start a trial._
 
-Then just give the REPL help text a quick read, and you're ready go. The REPL starts in _chat mode_ by default, which is good for fleshing out ideas before moving to implementation. Once the task is clear, Plandex will prompt you to switch to _tell mode_ to make a detailed plan and start writing code.
+**REPL Mode**: The REPL starts in _chat mode_ by default, which is good for fleshing out ideas before moving to implementation. Once the task is clear, Plandex will prompt you to switch to _tell mode_ to make a detailed plan and start writing code.
+
+**Agent Mode**: Provides fully autonomous execution with real-time progress updates. Perfect for automation, CI/CD integration, and hands-off coding tasks.
+
+## 🔧 Programmatic Integration
+
+Plandex Agent outputs structured JSON responses perfect for automation and integration:
+
+### Python Integration Example
+```python
+import subprocess
+import json
+
+def run_plandex_agent(prompt):
+    process = subprocess.Popen(
+        ["plandex", "agent", prompt, "--json"], 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE
+    )
+    
+    for line in process.stdout:
+        try:
+            response = json.loads(line.decode().strip())
+            if response["type"] == "job_completed":
+                print("✅ Task completed!")
+                break
+            elif response["type"] == "job_error":
+                print(f"❌ Error: {response['error']}")
+                break
+        except json.JSONDecodeError:
+            continue
+```
+
+### Node.js Integration Example
+```javascript
+const { spawn } = require('child_process');
+
+function runPlandexAgent(prompt) {
+    const process = spawn('plandex', ['agent', prompt, '--json']);
+    
+    process.stdout.on('data', (data) => {
+        const lines = data.toString().split('\n');
+        lines.forEach(line => {
+            try {
+                const response = JSON.parse(line.trim());
+                switch (response.type) {
+                    case 'job_completed':
+                        console.log('✅ Task completed!');
+                        break;
+                    case 'job_error':
+                        console.error('❌ Error:', response.error);
+                        break;
+                }
+            } catch (e) {
+                // Skip non-JSON lines
+            }
+        });
+    });
+}
+```
 
 <br/>
 
