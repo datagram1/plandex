@@ -21,8 +21,8 @@ declare -a TARGETS=(
     "darwin/arm64"    # macOS Apple Silicon
     "linux/amd64"     # Linux x86_64
     "linux/arm64"     # Linux ARM64
-    # "windows/amd64"   # Windows x86_64 - skipping due to syscall issues
-    # "windows/arm64"   # Windows ARM64 - skipping due to syscall issues
+    "windows/amd64"   # Windows x86_64
+    "windows/arm64"   # Windows ARM64
 )
 
 # Function to get platform name from GOOS

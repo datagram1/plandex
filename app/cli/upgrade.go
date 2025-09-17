@@ -61,7 +61,7 @@ func checkForUpgrade() {
 	var releaseData struct {
 		TagName string `json:"tag_name"`
 	}
-	
+
 	if err := json.Unmarshal(body, &releaseData); err != nil {
 		log.Println("Error parsing GitHub API response:", err)
 		return
@@ -119,7 +119,7 @@ func doUpgrade(version string) error {
 	} else {
 		fileExt = "tar.gz"
 	}
-	
+
 	downloadURL := fmt.Sprintf("https://github.com/datagram1/plandex/releases/download/%s/plandex_%s_%s_%s.%s", escapedTag, version, runtime.GOOS, runtime.GOARCH, fileExt)
 	resp, err := http.Get(downloadURL)
 	if err != nil {
@@ -134,7 +134,7 @@ func doUpgrade(version string) error {
 	} else {
 		tempFilePattern = "*.tar.gz"
 	}
-	
+
 	tempFile, err := os.CreateTemp("", tempFilePattern)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)

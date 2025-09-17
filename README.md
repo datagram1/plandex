@@ -222,11 +222,22 @@ The agent mode supports multiple ways to provide prompts:
 
 ## Install  📥
 
+### Unix-like Systems (macOS, Linux)
 ```bash
 curl -sL https://raw.githubusercontent.com/datagram1/plandex/main/install.sh | bash
 ```
 
-**Note:** Windows is supported via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install). Plandex only works correctly on Windows in the WSL shell. It doesn't work in the Windows CMD prompt or PowerShell.
+### Windows
+```powershell
+# PowerShell (Recommended)
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+Or download and run the batch file:
+1. Download [install.bat](https://raw.githubusercontent.com/datagram1/plandex/main/install.bat)
+2. Double-click to run
+
+**Note:** Windows now has native support! No need for WSL.
 
 [More installation options.](https://docs.plandex.ai/install)
 

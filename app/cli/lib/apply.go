@@ -421,12 +421,7 @@ func execApplyScript(
 
 	maybeDeleteCgroup := MaybeIsolateCgroup(execCmd)
 
-	pgid, err := syscall.Getpgid(execCmd.Process.Pid)
-	if err != nil {
-		log.Printf("Getpgid error: %v", err)
-	} else {
-		log.Printf("Child PID=%d PGID=%d", execCmd.Process.Pid, pgid)
-	}
+	logProcessGroup(execCmd)
 
 	// Create a context that we can cancel
 	ctx, cancel := context.WithCancel(context.Background())
