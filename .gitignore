@@ -25,3 +25,9 @@ __pycache__/
 __pycache__/
 
 .repo_ignore
+
+# Additional folders to ignore
+test/
+plans/
+.idea/
+~/dev/test2/
