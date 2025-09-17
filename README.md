@@ -121,20 +121,20 @@
 # Basic autonomous coding
 plandex agent "Fix the bug in the login function"
 
-# From file input
+# From file
 plandex agent --file task.txt
 
-# From stdin (piped input)
-echo "Add a new API endpoint" | plandex agent
+# From stdin
+echo "Create a React component" | plandex agent
+
+# With JSON output
+plandex agent --file prompt.txt --json
+
+# Save JSON to file while showing human-readable output
+plandex agent --file prompt.txt --output results.json
 
 # With human-readable progress
 plandex agent "Add a new API endpoint" --verbose
-
-# JSON output for automation
-plandex agent "Refactor the database layer" --json
-
-# Save results to file
-plandex agent "Implement user auth" --output results.json
 
 # Combine file and stdin
 echo "Additional context" | plandex agent --file base_prompt.txt
@@ -220,10 +220,10 @@ The agent mode supports multiple ways to provide prompts:
 
 <br/>
 
-## Install  📥
+## Install  📥
 
 ```bash
-curl -sL https://plandex.ai/install.sh | bash
+curl -sL https://raw.githubusercontent.com/datagram1/plandex/main/install.sh | bash
 ```
 
 **Note:** Windows is supported via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install). Plandex only works correctly on Windows in the WSL shell. It doesn't work in the Windows CMD prompt or PowerShell.
