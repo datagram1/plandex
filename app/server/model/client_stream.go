@@ -16,6 +16,15 @@ import (
 
 type OnStreamFn func(chunk string, buffer string) (shouldStop bool)
 
+// DEBUG helper function
+func getKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func CreateChatCompletionWithInternalStream(
 	clients map[string]ClientInfo,
 	authVars map[string]string,
@@ -29,7 +38,17 @@ func CreateChatCompletionWithInternalStream(
 	onStream OnStreamFn,
 	reqStarted time.Time,
 ) (*types.ModelResponse, error) {
+	if modelConfig == nil {
+		return nil, fmt.Errorf("modelConfig is nil")
+	}
+
 	providerComposite := modelConfig.GetProviderComposite(authVars, settings, orgUserConfig)
+
+	// DEBUG: Add logging to understand the initial setup
+	log.Printf("DEBUG: Initial modelConfig: %+v", modelConfig)
+	log.Printf("DEBUG: providerComposite: %s", providerComposite)
+	log.Printf("DEBUG: authVars keys: %v", getKeys(authVars))
+
 	_, ok := clients[providerComposite]
 	if !ok {
 		return nil, fmt.Errorf("client not found for provider composite: %s", providerComposite)
@@ -56,6 +75,15 @@ func CreateChatCompletionWithInternalStream(
 		handleClaudeMaxRateLimitedIfNeeded(modelErr, modelConfig, authVars, settings, orgUserConfig, currentOrgId, currentUserId)
 
 		fallbackRes = modelConfig.GetFallbackForModelError(numTotalRetry, didProviderFallback, modelErr, authVars, settings, orgUserConfig)
+
+		// DEBUG: Add logging to understand the fallback result
+		log.Printf("DEBUG: fallbackRes received: %+v", fallbackRes)
+		if fallbackRes.BaseModelConfig != nil {
+			log.Printf("DEBUG: fallbackRes.BaseModelConfig is not nil: %+v", *fallbackRes.BaseModelConfig)
+		} else {
+			log.Printf("DEBUG: fallbackRes.BaseModelConfig is NIL!")
+		}
+
 		resolvedModelConfig := fallbackRes.ModelRoleConfig
 
 		if resolvedModelConfig == nil {
@@ -289,6 +317,25 @@ func withStreamingRetries[T any](
 		}
 
 		log.Printf("Error in streaming operation: %v, isFallback: %t, numTotalRetry: %d, numFallbackRetry: %d, numRetry: %d, compareRetries: %d, maxRetries: %d\n", err, isFallback, numTotalRetry, numFallbackRetry, numRetry, compareRetries, maxRetries)
+
+		// DEBUG: Check fallbackRes before using it
+		log.Printf("DEBUG: About to call classifyBasicError with fallbackRes: %+v", fallbackRes)
+		if fallbackRes.BaseModelConfig == nil {
+			log.Printf("DEBUG: fallbackRes.BaseModelConfig is NIL in withStreamingRetries!")
+			// SAFETY FIX: Create a minimal BaseModelConfig to prevent panic
+			fallbackRes.BaseModelConfig = &shared.BaseModelConfig{
+				BaseModelShared: shared.BaseModelShared{},
+				BaseModelProviderConfig: shared.BaseModelProviderConfig{
+					ModelProviderConfigSchema: shared.ModelProviderConfigSchema{
+						Provider: shared.ModelProviderCustom,
+						SkipAuth: true,
+					},
+				},
+			}
+			log.Printf("DEBUG: Created minimal BaseModelConfig to prevent panic")
+		} else {
+			log.Printf("DEBUG: fallbackRes.BaseModelConfig.HasClaudeMaxAuth: %v", fallbackRes.BaseModelConfig.HasClaudeMaxAuth)
+		}
 
 		classifyRes := classifyBasicError(err, fallbackRes.BaseModelConfig.HasClaudeMaxAuth)
 		modelErr = &classifyRes

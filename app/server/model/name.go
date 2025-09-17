@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"plandex-server/db"
 	"plandex-server/model/prompts"
 	"plandex-server/types"
@@ -25,12 +26,25 @@ func GenPlanName(
 	sessionId string,
 	ctx context.Context,
 ) (string, error) {
-	config := settings.GetModelPack().Namer
+	modelPack := settings.GetModelPack()
+	if modelPack == nil {
+		return "", fmt.Errorf("model pack is nil")
+	}
+
+	log.Printf("DEBUG: Model pack name: %s", modelPack.Name)
+	log.Printf("DEBUG: Model pack namer: %+v", modelPack.Namer)
+
+	config := modelPack.Namer
 
 	var tools []openai.Tool
 	var toolChoice *openai.ToolChoice
 
+	log.Printf("DEBUG: About to call GetBaseModelConfig on namer config")
 	baseModelConfig := config.GetBaseModelConfig(authVars, settings, orgUserConfig)
+	if baseModelConfig == nil {
+		return "", fmt.Errorf("baseModelConfig is nil for namer")
+	}
+	log.Printf("DEBUG: baseModelConfig: %+v", baseModelConfig)
 
 	var sysPrompt string
 	if baseModelConfig.PreferredOutputFormat == shared.ModelOutputFormatXml {
