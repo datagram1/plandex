@@ -107,6 +107,7 @@
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--output`, `-o` | Output file for JSON responses | stdout |
+| `--file`, `-f` | File containing the prompt | - |
 | `--no-plan` | Work without local plan context | false |
 | `--auto-exec` | Automatically execute commands | true |
 | `--auto-apply` | Automatically apply changes | true |
@@ -120,6 +121,12 @@
 # Basic autonomous coding
 plandex agent "Fix the bug in the login function"
 
+# From file input
+plandex agent --file task.txt
+
+# From stdin (piped input)
+echo "Add a new API endpoint" | plandex agent
+
 # With human-readable progress
 plandex agent "Add a new API endpoint" --verbose
 
@@ -128,7 +135,37 @@ plandex agent "Refactor the database layer" --json
 
 # Save results to file
 plandex agent "Implement user auth" --output results.json
+
+# Combine file and stdin
+echo "Additional context" | plandex agent --file base_prompt.txt
 ```
+
+### Agent Input Methods
+
+The agent mode supports multiple ways to provide prompts:
+
+1. **Command Line Argument**: Direct prompt as argument
+   ```bash
+   plandex agent "Fix the bug in the login function"
+   ```
+
+2. **File Input**: Read prompt from a file
+   ```bash
+   plandex agent --file task.txt
+   plandex agent -f requirements.txt
+   ```
+
+3. **Stdin Input**: Pipe content from other commands
+   ```bash
+   echo "Create a React component" | plandex agent
+   cat requirements.txt | plandex agent
+   git diff | plandex agent
+   ```
+
+4. **Combined Input**: Mix file content with stdin or arguments
+   ```bash
+   echo "Additional context" | plandex agent --file base_prompt.txt
+   ```
 
 ## Smart context management that works in big projects
 
@@ -260,9 +297,18 @@ Plandex Agent outputs structured JSON responses perfect for automation and integ
 import subprocess
 import json
 
-def run_plandex_agent(prompt):
+def run_plandex_agent(prompt=None, prompt_file=None):
+    cmd = ["plandex", "agent", "--json"]
+    
+    if prompt_file:
+        cmd.extend(["--file", prompt_file])
+    elif prompt:
+        cmd.append(prompt)
+    else:
+        raise ValueError("Either prompt or prompt_file must be provided")
+    
     process = subprocess.Popen(
-        ["plandex", "agent", prompt, "--json"], 
+        cmd, 
         stdout=subprocess.PIPE, 
         stderr=subprocess.PIPE
     )
@@ -278,14 +324,28 @@ def run_plandex_agent(prompt):
                 break
         except json.JSONDecodeError:
             continue
+
+# Usage examples:
+run_plandex_agent("Fix the bug in login function")
+run_plandex_agent(prompt_file="task.txt")
 ```
 
 ### Node.js Integration Example
 ```javascript
 const { spawn } = require('child_process');
 
-function runPlandexAgent(prompt) {
-    const process = spawn('plandex', ['agent', prompt, '--json']);
+function runPlandexAgent(prompt = null, promptFile = null) {
+    const args = ['agent', '--json'];
+    
+    if (promptFile) {
+        args.push('--file', promptFile);
+    } else if (prompt) {
+        args.push(prompt);
+    } else {
+        throw new Error('Either prompt or promptFile must be provided');
+    }
+    
+    const process = spawn('plandex', args);
     
     process.stdout.on('data', (data) => {
         const lines = data.toString().split('\n');
@@ -306,6 +366,10 @@ function runPlandexAgent(prompt) {
         });
     });
 }
+
+// Usage examples:
+runPlandexAgent("Fix the bug in login function");
+runPlandexAgent(null, "task.txt");
 ```
 
 <br/>
