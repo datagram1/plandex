@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -37,7 +38,7 @@ func checkForUpgrade() {
 	defer term.StopSpinner()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	latestVersionURL := "https://plandex.ai/v2/cli-version.txt"
+	latestVersionURL := "https://api.github.com/repos/datagram1/plandex/releases/latest"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, latestVersionURL, nil)
 	if err != nil {
 		log.Println("Error creating request:", err)
@@ -56,7 +57,18 @@ func checkForUpgrade() {
 		return
 	}
 
-	versionStr := string(body)
+	// Parse GitHub API response to extract tag_name
+	var releaseData struct {
+		TagName string `json:"tag_name"`
+	}
+	
+	if err := json.Unmarshal(body, &releaseData); err != nil {
+		log.Println("Error parsing GitHub API response:", err)
+		return
+	}
+
+	// Extract version from tag (remove "cli/v" prefix)
+	versionStr := strings.TrimPrefix(releaseData.TagName, "cli/v")
 	versionStr = strings.TrimSpace(versionStr)
 
 	latestVersion, err := semver.NewVersion(versionStr)
@@ -100,7 +112,15 @@ func doUpgrade(version string) error {
 	tag := fmt.Sprintf("cli/v%s", version)
 	escapedTag := url.QueryEscape(tag)
 
-	downloadURL := fmt.Sprintf("https://github.com/plandex-ai/plandex/releases/download/%s/plandex_%s_%s_%s.tar.gz", escapedTag, version, runtime.GOOS, runtime.GOARCH)
+	// Use .zip for Windows, .tar.gz for other platforms
+	var fileExt string
+	if runtime.GOOS == "windows" {
+		fileExt = "zip"
+	} else {
+		fileExt = "tar.gz"
+	}
+	
+	downloadURL := fmt.Sprintf("https://github.com/datagram1/plandex/releases/download/%s/plandex_%s_%s_%s.%s", escapedTag, version, runtime.GOOS, runtime.GOARCH, fileExt)
 	resp, err := http.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("failed to download the update: %w", err)
@@ -108,7 +128,14 @@ func doUpgrade(version string) error {
 	defer resp.Body.Close()
 
 	// Create a temporary file to save the downloaded archive
-	tempFile, err := os.CreateTemp("", "*.tar.gz")
+	var tempFilePattern string
+	if runtime.GOOS == "windows" {
+		tempFilePattern = "*.zip"
+	} else {
+		tempFilePattern = "*.tar.gz"
+	}
+	
+	tempFile, err := os.CreateTemp("", tempFilePattern)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
@@ -125,6 +152,19 @@ func doUpgrade(version string) error {
 		return fmt.Errorf("failed to seek in temporary file: %w", err)
 	}
 
+	// Extract the binary based on platform
+	if runtime.GOOS == "windows" {
+		// Handle ZIP file for Windows
+		return extractFromZip(tempFile)
+	} else {
+		// Handle TAR.GZ file for Unix-like systems
+		return extractFromTarGz(tempFile)
+	}
+
+	return nil
+}
+
+func extractFromTarGz(tempFile *os.File) error {
 	// Now, extract the binary from the tempFile
 	gzr, err := gzip.NewReader(tempFile)
 	if err != nil {
@@ -154,8 +194,13 @@ func doUpgrade(version string) error {
 			break
 		}
 	}
-
 	return nil
+}
+
+func extractFromZip(tempFile *os.File) error {
+	// For Windows ZIP files, we'll need to use archive/zip
+	// This is a simplified version - in practice, you might want to use a ZIP library
+	return fmt.Errorf("ZIP extraction not yet implemented for Windows upgrades")
 }
 
 func restartPlandex() {

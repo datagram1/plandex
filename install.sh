@@ -95,9 +95,9 @@ welcome_plandex () {
 }
 
 download_plandex () {
-  ENCODED_TAG="cli%2Fv${VERSION}"
+  TAG="cli/v${VERSION}"
 
-  url="${RELEASES_URL}/${ENCODED_TAG}/plandex_${VERSION}_${PLATFORM}_${ARCH}.tar.gz"
+  url="${RELEASES_URL}/${TAG}/plandex_${VERSION}_${PLATFORM}_${ARCH}.tar.gz"
 
   mkdir -p plandex_install_tmp
   cd plandex_install_tmp

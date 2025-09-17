@@ -1,0 +1,10 @@
+Create a system information script that gathers CPU, memory, disk, OS, and network information using psutil. The script should have a command-line interface with both pretty-print and JSON output options. Include an apply script that installs dependencies and runs the program.
+
+Requirements:
+1. Create a system_info package with __init__.py, info.py, and cli.py
+2. The info.py should contain functions to gather system information using psutil
+3. The cli.py should parse command-line arguments and provide both pretty-print and JSON output
+4. Create a top-level run_system_info.py entry point script
+5. Create an _apply.sh script that installs psutil and runs the program
+6. Handle permission errors gracefully (like network connection access)
+7. Provide comprehensive system information including CPU, memory, disk, OS, network, and process details
