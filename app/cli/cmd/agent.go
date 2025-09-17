@@ -12,10 +12,16 @@ import (
 
 var agentCmd = &cobra.Command{
 	Use:   "agent [prompt]",
-	Short: "Run Plandex in autonomous agent mode with human-readable output",
+	Short: "Run Plandex in autonomous agent mode (local mode by default)",
 	Long: `Run Plandex in autonomous agent mode similar to Cursor's agent mode.
 This mode provides human-readable progress and autonomous execution capabilities.
 Perfect for interactive use and automation.
+
+By default, agent mode runs in LOCAL MODE - it works standalone without requiring
+a server or database. It automatically detects if full mode (server + database)
+is available and uses it if detected, otherwise falls back to local mode.
+
+You can force modes with --local-mode or --full-mode flags.
 
 The agent mode displays clean, readable progress by default. Use --json for
 machine-readable output or --output to save JSON to a file.
@@ -30,7 +36,9 @@ Examples:
   plandex agent --file task.txt
   echo "Add a new API endpoint" | plandex agent
   plandex agent "Refactor the database layer" --json
-  plandex agent "Implement user auth" --output results.json`,
+  plandex agent "Implement user auth" --output results.json
+  plandex agent "Create a new feature" --full-mode
+  plandex agent "Quick fix" --local-mode`,
 	Args: cobra.RangeArgs(0, 1),
 	Run:  runAgent,
 }
@@ -44,6 +52,8 @@ var (
 	agentHumanReadable bool
 	agentVerbose       bool
 	agentJSON          bool
+	agentFullMode      bool
+	agentLocalMode     bool
 )
 
 func init() {
@@ -57,6 +67,8 @@ func init() {
 	agentCmd.Flags().BoolVar(&agentHumanReadable, "human-readable", true, "Display human-readable progress (default)")
 	agentCmd.Flags().BoolVar(&agentVerbose, "verbose", false, "Enable verbose human-readable output")
 	agentCmd.Flags().BoolVar(&agentJSON, "json", false, "Output JSON instead of human-readable format")
+	agentCmd.Flags().BoolVar(&agentFullMode, "full-mode", false, "Force full mode (requires server and database)")
+	agentCmd.Flags().BoolVar(&agentLocalMode, "local-mode", false, "Force local mode (standalone, no server required)")
 }
 
 func runAgent(cmd *cobra.Command, args []string) {
@@ -83,6 +95,8 @@ func runAgent(cmd *cobra.Command, args []string) {
 		HumanReadable:     agentHumanReadable,
 		Verbose:           agentVerbose,
 		JSON:              agentJSON,
+		FullMode:          agentFullMode,
+		LocalMode:         agentLocalMode,
 	}
 
 	// Run agent mode

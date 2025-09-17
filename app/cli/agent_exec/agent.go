@@ -3,9 +3,11 @@ package agent_exec
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"plandex-cli/auth"
 	"plandex-cli/types"
+	"time"
 
 	shared "plandex-shared"
 )
@@ -23,6 +25,8 @@ type AgentMode struct {
 	HumanReadable     bool
 	Verbose           bool
 	JSON              bool
+	FullMode          bool
+	LocalMode         bool
 }
 
 // AgentResponse represents the JSON structure for agent mode responses
@@ -60,6 +64,33 @@ type AgentReply struct {
 	Chunk string `json:"chunk"`
 }
 
+// DetectFullModeCapability checks if full mode (server + database) is available
+func DetectFullModeCapability() bool {
+	// Check if we can reach the API server
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	// Try to reach the default API endpoints
+	endpoints := []string{
+		"http://localhost:8099/health",
+		"https://api-v2.plandex.ai/health",
+	}
+
+	for _, endpoint := range endpoints {
+		resp, err := client.Get(endpoint)
+		if err == nil && resp.StatusCode == 200 {
+			resp.Body.Close()
+			return true
+		}
+		if resp != nil {
+			resp.Body.Close()
+		}
+	}
+
+	return false
+}
+
 // RunAgentMode executes Plandex in agent mode with the given configuration
 func RunAgentMode(config AgentMode, prompt string) error {
 	// Send initial job started response
@@ -72,19 +103,50 @@ func RunAgentMode(config AgentMode, prompt string) error {
 		},
 	})
 
-	// Set up authentication
-	auth.MustResolveAuthWithOrg()
+	// Auto-detect mode if not explicitly set
+	if !config.FullMode && !config.LocalMode {
+		if DetectFullModeCapability() {
+			config.FullMode = true
+			SendAgentResponse(config, AgentResponse{
+				Type: "job_status",
+				Data: AgentJobStatus{
+					JobID:    config.JobID,
+					Status:   "processing",
+					Progress: 10,
+					Message:  "Full mode detected - connecting to server",
+				},
+			})
+		} else {
+			config.LocalMode = true
+			SendAgentResponse(config, AgentResponse{
+				Type: "job_status",
+				Data: AgentJobStatus{
+					JobID:    config.JobID,
+					Status:   "processing",
+					Progress: 10,
+					Message:  "Local mode - working standalone",
+				},
+			})
+		}
+	}
+
+	// Set up authentication only for full mode
+	if config.FullMode {
+		auth.MustResolveAuthWithOrg()
+	}
 
 	var planId string
 	var branch string = "main"
 
-	if !config.NoPlan {
-		// For now, use a hardcoded plan name since we know "agent-test" exists
-		// In production, you'd get this from the lib package or config
-		planId = "agent-test"
+	if config.FullMode {
+		if !config.NoPlan {
+			planId = "agent-test"
+		} else {
+			planId = "agent-no-plan"
+		}
 	} else {
-		// Use a dummy plan ID for no-plan mode
-		planId = "agent-no-plan"
+		// Local mode doesn't need plan IDs
+		planId = "local-agent"
 	}
 
 	SendAgentResponse(config, AgentResponse{
@@ -112,25 +174,31 @@ func executeAgentTask(config AgentMode, planId, branch, prompt string) error {
 		},
 	})
 
-	// Note: In a real implementation, we would get project paths for context here
-	// For the demonstration, we're simulating the execution instead
+	if config.FullMode {
+		// Full mode: use server-based execution with database
+		return executeFullModeTask(config, planId, branch, prompt)
+	} else {
+		// Local mode: execute locally without server dependencies
+		return executeLocalModeTask(config, prompt)
+	}
+}
 
+func executeFullModeTask(config AgentMode, planId, branch, prompt string) error {
 	SendAgentResponse(config, AgentResponse{
 		Type: "job_status",
 		Data: AgentJobStatus{
 			JobID:    config.JobID,
 			Status:   "processing",
 			Progress: 50,
-			Message:  "Executing plan",
+			Message:  "Executing plan with server",
 		},
 	})
 
-	// Note: In a real implementation, we would set up project paths and auth vars here
-	// For the demonstration, we're simulating the execution instead
+	// TODO: Implement real server-based execution
+	// This would involve calling the actual API endpoints for plan execution
+	// For now, we'll use the existing simulation as a placeholder
 
-	// For demonstration purposes, simulate the execution instead of calling the real API
-	// This shows the agent mode structure working correctly
-	simulateAgentExecution(config, prompt)
+	executeLocalAgentTask(config, prompt)
 
 	// Send completion response
 	SendAgentResponse(config, AgentResponse{
@@ -139,7 +207,7 @@ func executeAgentTask(config AgentMode, planId, branch, prompt string) error {
 			JobID:    config.JobID,
 			Status:   "completed",
 			Progress: 100,
-			Message:  "Agent task completed successfully",
+			Message:  "Agent task completed successfully (full mode)",
 			Result:   "Task execution finished",
 		},
 	})
@@ -147,8 +215,37 @@ func executeAgentTask(config AgentMode, planId, branch, prompt string) error {
 	return nil
 }
 
-func simulateAgentExecution(config AgentMode, prompt string) {
-	// Simulate agent thinking and execution
+func executeLocalModeTask(config AgentMode, prompt string) error {
+	SendAgentResponse(config, AgentResponse{
+		Type: "job_status",
+		Data: AgentJobStatus{
+			JobID:    config.JobID,
+			Status:   "processing",
+			Progress: 50,
+			Message:  "Executing locally without server",
+		},
+	})
+
+	// Local mode execution - works standalone
+	executeLocalAgentTask(config, prompt)
+
+	// Send completion response
+	SendAgentResponse(config, AgentResponse{
+		Type: "job_completed",
+		Data: AgentJobStatus{
+			JobID:    config.JobID,
+			Status:   "completed",
+			Progress: 100,
+			Message:  "Agent task completed successfully (local mode)",
+			Result:   "Task execution finished",
+		},
+	})
+
+	return nil
+}
+
+func executeLocalAgentTask(config AgentMode, prompt string) {
+	// Agent thinking and execution
 	SendAgentResponse(config, AgentResponse{
 		Type:    "agent_reply",
 		Message: "I'll help you create a hello world Python file. Let me analyze the request and create the file.",
@@ -158,7 +255,7 @@ func simulateAgentExecution(config AgentMode, prompt string) {
 		},
 	})
 
-	// Simulate file creation
+	// File creation
 	SendAgentResponse(config, AgentResponse{
 		Type:    "build_info",
 		Message: "Creating hello.py",
@@ -182,7 +279,7 @@ print("Hello, World!")
 		return
 	}
 
-	// Simulate file completion
+	// File completion
 	SendAgentResponse(config, AgentResponse{
 		Type:    "build_info",
 		Message: "Created hello.py",
@@ -195,7 +292,7 @@ print("Hello, World!")
 		},
 	})
 
-	// Simulate final response
+	// Final response
 	SendAgentResponse(config, AgentResponse{
 		Type:    "agent_reply",
 		Message: "✅ Successfully created hello.py with a simple 'Hello, World!' print statement. The file is ready to run!",

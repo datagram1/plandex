@@ -222,4 +222,3 @@ func ExecPlandexCommandWithParams(args []string, params ExecPlandexCommandParams
 
 	return string(output), nil
 }
-

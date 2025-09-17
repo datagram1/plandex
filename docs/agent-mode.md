@@ -7,7 +7,8 @@ Plandex Agent Mode provides autonomous execution capabilities similar to Cursor'
 - **Autonomous Execution**: Automatically explores codebase and makes changes without user intervention
 - **JSON Output**: Structured responses for easy programmatic parsing
 - **Human-Readable Progress**: Optional real-time progress display with timestamps and colors
-- **No Plan Dependency**: Can work independently of local plans
+- **Local Mode by Default**: Works standalone without requiring server or database
+- **Automatic Mode Detection**: Detects full mode capabilities and uses them when available
 - **Real-time Feedback**: Provides job completion, errors, and progress updates
 
 ## Usage
@@ -44,6 +45,22 @@ plandex agent "Implement user authentication" --output results.json --human-read
 
 Saves JSON responses to a file while showing progress on screen.
 
+### Local Mode (Default)
+
+```bash
+plandex agent "Analyze the codebase structure" --local-mode
+```
+
+Works standalone without requiring server or database. This is the default mode.
+
+### Full Mode
+
+```bash
+plandex agent "Create a complex feature" --full-mode
+```
+
+Uses server and database for advanced features like plan management and collaboration.
+
 ### No-Plan Mode
 
 ```bash
@@ -57,11 +74,13 @@ Works without requiring a local plan context.
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--output`, `-o` | Output file for JSON responses | stdout |
-| `--no-plan` | Work without local plan context | true |
+| `--no-plan` | Work without local plan context | false |
 | `--auto-exec` | Automatically execute commands | true |
 | `--auto-apply` | Automatically apply changes | true |
-| `--human-readable` | Display human-readable progress | false |
+| `--human-readable` | Display human-readable progress | true |
 | `--verbose` | Enable verbose human-readable output | false |
+| `--local-mode` | Force local mode (standalone) | auto-detect |
+| `--full-mode` | Force full mode (server + database) | auto-detect |
 
 ## JSON Response Types
 

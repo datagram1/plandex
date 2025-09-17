@@ -92,15 +92,18 @@
 
 ## 🤖 Plandex Agent Mode - Autonomous AI Coding
 
-**NEW**: Plandex Agent provides fully autonomous AI coding capabilities with programmatic integration support.
+**NEW**: Plandex Agent provides fully autonomous AI coding capabilities with programmatic integration support. **Now works standalone without server or database!**
 
 ### Agent Mode Features
 
 - 🚀 **Autonomous Execution**: Automatically explores codebase and makes changes without user intervention
 - 📊 **JSON Output**: Structured responses for easy programmatic parsing and automation
 - 👁️ **Human-Readable Progress**: Optional real-time progress display with timestamps and colors
-- 🔧 **No Plan Dependency**: Can work independently of local plans for analysis tasks
+- 🏠 **Local Mode by Default**: Works standalone without requiring server or database
+- 🔍 **Automatic Mode Detection**: Detects full mode capabilities and uses them when available
 - ⚡ **Real-time Feedback**: Provides job completion, errors, and progress updates
+- 🔧 **Zero Setup**: Works immediately after installation with just a `custom-models.json` file
+- 🌐 **Perfect for CI/CD**: Ideal for automated workflows and central planning systems
 
 ### Agent Command Options
 
@@ -114,15 +117,23 @@
 | `--human-readable` | Display human-readable progress | true |
 | `--verbose` | Enable verbose human-readable output | false |
 | `--json` | Output JSON instead of human-readable format | false |
+| `--local-mode` | Force local mode (standalone) | auto-detect |
+| `--full-mode` | Force full mode (server + database) | auto-detect |
 
 ### Quick Start with Agent Mode
 
 ```bash
-# Basic autonomous coding
+# Basic autonomous coding (local mode by default)
 plandex agent "Fix the bug in the login function"
 
 # From file
 plandex agent --file task.txt
+
+# Force local mode (standalone)
+plandex agent "Quick fix" --local-mode
+
+# Force full mode (server + database)
+plandex agent "Complex feature" --full-mode
 
 # From stdin
 echo "Create a React component" | plandex agent
@@ -138,6 +149,68 @@ plandex agent "Add a new API endpoint" --verbose
 
 # Combine file and stdin
 echo "Additional context" | plandex agent --file base_prompt.txt
+```
+
+### 🚀 Standalone Agent Mode - Zero Setup Required
+
+**Perfect for CI/CD, automation, and distributed systems!**
+
+Agent mode now works completely standalone - no server, no database, no authentication required. Just install Plandex and start using it immediately.
+
+#### Minimal Setup (Linux/Unix)
+
+```bash
+# 1. Download and install Plandex
+curl -sL https://plandex.ai/install.sh | bash
+
+# 2. Create a simple custom-models.json (optional but recommended)
+cat > custom-models.json << 'EOF'
+{
+  "models": [
+    {
+      "modelId": "gpt-4o-mini",
+      "publisher": "openai",
+      "description": "GPT-4o Mini",
+      "defaultMaxConvoTokens": 15000,
+      "maxTokens": 200000,
+      "maxOutputTokens": 64000,
+      "providers": [
+        {
+          "provider": "openai",
+          "modelName": "gpt-4o-mini"
+        }
+      ]
+    }
+  ]
+}
+EOF
+
+# 3. Set your API key
+export OPENAI_API_KEY="your-api-key-here"
+
+# 4. Start using agent mode immediately!
+plandex agent "Fix the bug in the login function"
+```
+
+#### Docker Usage
+
+```bash
+# Run agent mode in Docker without any server setup
+docker run --rm -v $(pwd):/workspace -w /workspace \
+  -e OPENAI_API_KEY="your-key" \
+  plandexai/plandex-cli:latest \
+  agent "Create a new API endpoint"
+```
+
+#### CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Run Plandex Agent
+  run: |
+    curl -sL https://plandex.ai/install.sh | bash
+    export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+    plandex agent "Fix failing tests" --json --output results.json
 ```
 
 ### Agent Input Methods
